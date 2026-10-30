@@ -1,9 +1,13 @@
 import Phaser from 'phaser';
 import { ARENA } from '../../config/balance';
 import { THEME } from '../../config/theme';
+import type { Enemy } from '../entities/Enemy';
 import type { Player } from '../entities/Player';
 import type { RunEvents } from '../RunEvents';
-import type { Fx } from './Fx';
+import type { Anchor, Fx } from './Fx';
+
+/** The merge key for gold over the slime's head: every kill there adds into one popup. */
+const HEAD = 'head';
 
 /**
  * What the player sees when something happens in the run: kill gold, the
@@ -11,7 +15,7 @@ import type { Fx } from './Fx';
  * driven entirely by the run's events, so gameplay never calls a visual
  * directly for these.
  *
- * Popups over the slime stack by row above its crown: row 0 is kill gold; the
+ * Popups over the slime stack by row above its crown: row 0 is kill gold (when it isn't on the mob); the
  * stage-clear heal, the HP bonus, the speed bonus and the mode's clear bonus
  * sit on rows 1–4, so the kill that clears a stage never hides them.
  */
@@ -22,8 +26,11 @@ export class RunFeedback {
     private readonly player: Player,
     events: RunEvents,
   ) {
-    // League's last-hit gold: what this kill was worth, riding on the slime's head until it fades.
-    events.on('kill', ({ points }) => this.fx.goldPopup(() => ({ x: this.player.x, y: this.overHead(0) }), points));
+    // League's last-hit gold: what this kill was worth, on the mob or riding on the slime's head.
+    events.on('kill', ({ target, points }) => {
+      if (THEME.killGold.onMob) this.fx.goldPopup(this.onMob(target), points, target);
+      else this.fx.goldPopup(() => ({ x: this.player.x, y: this.overHead(0) }), points, HEAD);
+    });
 
     events.on('levelUp', ({ level }) => {
       const { x, y, radius } = this.player;
@@ -33,7 +40,11 @@ export class RunFeedback {
 
     events.on('markDetonated', ({ target }) => this.fx.detonation(target.x, target.y));
 
-    events.on('kitBonus', ({ points }) => this.scorePopup(`+${points}`, 1));
+    // A kit's award earned on a mob shows there with the kill gold, adding into it when that mob just died.
+    events.on('kitBonus', ({ points, from }) => {
+      if (from && THEME.killGold.onMob) this.fx.goldPopup(this.onMob(from), points, from);
+      else this.scorePopup(`+${points}`, 1);
+    });
 
     events.on('waveCleared', ({ points }) => {
       if (points > 0) this.scorePopup(`+${points} SPEED`, 3);
@@ -57,6 +68,15 @@ export class RunFeedback {
         .setDepth(THEME.depth.screen);
       this.scene.tweens.add({ targets: rim, alpha: 0, duration: 260, onComplete: () => rim.destroy() });
     });
+  }
+
+  /**
+   * Where gold on a mob rises from, fixed where it was earned: a dead mob's in
+   * place of its killing "-1" (EnemyView.onHit), a live one's just above the "-1" it still shows.
+   */
+  private onMob(target: Enemy): Anchor {
+    const at = { x: target.x, y: target.y - target.radius - 6 - (target.dead ? 0 : 18) };
+    return () => at;
   }
 
   /** Where text over the slime starts: just above the crown, `row` popup rows up. */

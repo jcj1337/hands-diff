@@ -153,7 +153,7 @@ export class SnakeLadyKit implements Kit {
     const pips = poisoned ? E.pipsOnPoisoned : E.pips;
     for (let i = 0; i < pips && target.active; i++) this.pip(target);
     // A fang that finishes its target pays a little score.
-    if (!target.active) this.ctx.combat.bonus(E.killScoreBonus);
+    if (!target.active) this.ctx.combat.bonus(E.killScoreBonus, target);
     // A poisoned bite brings her ultimate closer.
     if (poisoned) this.ctx.cooldowns.reduce(R.poisonedFangCooldownReductionMs, ['r']);
   }

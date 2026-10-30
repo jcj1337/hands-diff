@@ -37,10 +37,10 @@ export class Combat {
     if (killed) this.kill(target);
   }
 
-  /** A kit's own score award (Magic Boy's E), × the stage multiplier like every award. */
-  bonus(points: number): void {
+  /** A kit's own score award (Magic Boy's E), × the stage multiplier like every award; `from` is the mob it was earned on, if any. */
+  bonus(points: number, from?: Enemy): void {
     const awarded = this.scoring.addKitBonus(points, this.director.stage);
-    if (awarded > 0) this.events.emit('kitBonus', { points: awarded });
+    if (awarded > 0) this.events.emit('kitBonus', { points: awarded, from });
   }
 
   /**

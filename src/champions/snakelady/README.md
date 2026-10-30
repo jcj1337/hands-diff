@@ -72,8 +72,8 @@ autos.
 They weave apart in a shallow arc and meet again in the target, snapping shut across it
 in a burst of venom puffs. A poisoned target takes a second, wider bite a beat later,
 with a bigger burst and a short screen shake. That second bite is the second pip. A fang
-that **kills** pays 10 × the stage multiplier in score (`E.killScoreBonus`), shown as a
-gold `+N` over her.
+that **kills** pays 10 × the stage multiplier in score (`E.killScoreBonus`), added into
+the kill's gold on the mob.
 
 **W-Flash and R-Flash.** If you Flash during either cast, the spell comes from where she
 lands, aimed the same way. W's bolts leave from the Flash destination, and the wall lands

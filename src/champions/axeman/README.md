@@ -54,12 +54,13 @@ for 3s. Use it to get under an axe he threw too far. Each catch resets it.
 
 **E.** He throws a great axe a short way, about as far as his auto reaches, and it's very
 wide. It passes through everything. The axe removes a pip from each enemy it hits, slows
-it, and shoves it sideways off the line, toward whichever side it was already on. An
-unstoppable enemy, such as a braced Bulwark, still loses the pip and gets the slow, but
-doesn't move.
+it, and shoves it sideways off the line, toward whichever side it was already on. The
+shove is instant for gameplay, but the enemy is drawn skidding there over about 0.16s,
+squashed by the blow and kicking up dust. An unstoppable enemy, such as a braced Bulwark,
+still loses the pip and gets the slow, but doesn't move.
 
 **R.** Two great axes fly down a line and come back to him, wherever he has gone. They
-turn back about 110px past the first enemy they hit, or at once when you press R again,
+turn back about 280px past the first enemy they hit, or at once when you press R again,
 or at the arena's edge if neither happens. They pass through everything and can hit each
 enemy once on the way out and once on the way back. The second press isn't a new cast,
 so the cooldown runs from the first.

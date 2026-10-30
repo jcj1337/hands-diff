@@ -10,7 +10,7 @@ export type WhirlLeg = 'out' | 'back';
 
 /**
  * His R in flight: axes that fly out in a straight line, turn, and fly back
- * to him wherever he is. They turn a little past the first enemy they hit
+ * to him wherever he is. They turn a good way past the first enemy they hit
  * (`overshootPx`), at once when recalled, or at the arena's edge. They pass
  * through everything, hitting each enemy once on the way out and once on the
  * way back.
@@ -69,7 +69,7 @@ export class WhirlingAxes {
       if (Math.hypot(target.x - this.x, target.y - this.y) > this.spec.radius + target.radius) continue;
       this.struck.add(target);
       Fx.of(this.scene).impact('axe', target.x, target.y);
-      // The first thing it hits on the way out starts the turn: a little further, then home.
+      // The first thing it hits on the way out starts the turn: overshootPx further, then home.
       if (this.leg === 'out' && this.turnIn === null) this.turnIn = this.spec.overshootPx;
       this.onHit(target, this.leg);
     }

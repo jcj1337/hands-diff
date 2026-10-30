@@ -107,7 +107,7 @@ export const E = {
 
 /**
  * R: two great axes down a line across the arena. They turn for home, back to
- * him wherever he has gone, a little past the first enemy they hit
+ * him wherever he has gone, a good way past the first enemy they hit
  * (`overshootPx`), or at once when he presses R again, or at the arena's edge.
  * They pass through everything, out and back.
  */
@@ -121,8 +121,8 @@ export const R = {
   returnPips: 1,
   /** Never further than this before turning, edge or not. */
   maxRange: 1500,
-  /** After the first enemy it hits, it carries on this far before turning. */
-  overshootPx: 110,
+  /** After the first enemy it hits, it carries on this far before turning: through whatever stands behind it. */
+  overshootPx: 280,
 };
 
 export const CLEAVE_SLOW = 'axeman.cleave';

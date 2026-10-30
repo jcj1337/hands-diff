@@ -299,6 +299,19 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
   section('6. E');
   // Two in the line to his right, one above it and one below: both hit, slowed, shoved off it. One past its reach.
   await stage([{ x: 760, y: 320, hp: 5 }, { x: 850, y: 400, hp: 5 }, { x: 1040, y: 360, hp: 5 }]);
+  // Where the first one is drawn (its shadow, minus the shadow's offset) against where it is, every frame.
+  await page.evaluate(() => {
+    const g = window.__warmup.scene.getScene('GameScene');
+    const a = g.director.enemies[0];
+    const frames = [];
+    g.shoveFrames = frames;
+    const t0 = g.clock.now;
+    const tick = () => {
+      frames.push({ t: g.clock.now, y: a.y, drawnY: a.view.shadow.y - a.view.art.shadowOffsetY });
+      if (g.clock.now - t0 < 1500) requestAnimationFrame(tick);
+    };
+    tick();
+  });
   await page.mouse.move(1000, 360);
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => window.__warmup.scene.getScene('GameScene').kit.eHits >= 2, null, { timeout: 4000 });
@@ -316,6 +329,15 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
     Math.abs(a.y - (320 - cfg.E.knockPx)) < 3 && Math.abs(b.y - (400 + cfg.E.knockPx)) < 3 && Math.abs(a.x - 760) < 3 && far.y === 360
       ? pass(`and shoves each ${cfg.E.knockPx}px off the line, to the side it was on (y 320 -> ${Math.round(a.y)}, 400 -> ${Math.round(b.y)})`)
       : fail(`E shove: ${JSON.stringify(s.enemies.map((e) => [e.x, e.y]))}`);
+    // The shove is instant for gameplay; the body is drawn skidding after it, closing the gap, then settled.
+    const frames = await page.evaluate(() => window.__warmup.scene.getScene('GameScene').shoveFrames);
+    const at = frames.findIndex((f) => f.y < 319);
+    const after = frames.slice(at).map((f) => ({ t: f.t - frames[at].t, gap: Math.abs(f.drawnY - f.y) }));
+    const settled = after.find((f) => f.gap < 1);
+    at > 0 && after[0].gap > cfg.E.knockPx * 0.6 && after.every((f, i) => i === 0 || f.gap <= after[i - 1].gap + 1)
+      && settled && settled.t > 60 && settled.t < 400 && after.filter((f) => f.t > settled.t).every((f) => f.gap < 1)
+      ? pass(`drawn skidding there: ${Math.round(after[0].gap)}px behind at the blow, closing, settled ~${Math.round(settled.t)}ms later`)
+      : fail(`shove slide: ${JSON.stringify({ at, first: after[0], settled, worst: after.slice(1).find((f, i) => f.gap > after[i].gap + 1) })}`);
   }
 
   // === 7. R ======================================================================

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CONTACT, DIFFICULTY, ENEMIES, type EnemyId } from '../../config/balance';
+import { ARENA, CONTACT, DIFFICULTY, ENEMIES, type EnemyId } from '../../config/balance';
 import { THEME } from '../../config/theme';
 import { Fx } from '../view/Fx';
 import { scaled } from '../systems/Difficulty';
@@ -322,6 +322,22 @@ export abstract class Enemy {
   stun(nowMs: number, ms: number): boolean {
     if (this.unstoppable) return false;
     this.dazedUntil = Math.max(this.dazedUntil, nowMs + ms);
+    return true;
+  }
+
+  /**
+   * Knocked aside by (dx, dy), at once and kept in the arena. Its view slides
+   * the body after it (EnemyView.onShoved).
+   * @returns whether it moved: an unstoppable or held enemy stays put.
+   */
+  shove(dx: number, dy: number): boolean {
+    if (this.unstoppable || this.held) return false;
+    const fromX = this.x;
+    const fromY = this.y;
+    const m = ARENA.padding + this.radius;
+    this.x = Phaser.Math.Clamp(this.x + dx, m, ARENA.width - m);
+    this.y = Phaser.Math.Clamp(this.y + dy, m, ARENA.height - m);
+    this.view.onShoved(fromX, fromY);
     return true;
   }
 

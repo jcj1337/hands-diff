@@ -327,6 +327,17 @@ export const THEME = {
      * across the gameplay arrival window. Replaced by the real manifest pass.
      */
     spawnCue: { color: P.cream, startRadiusScale: 2, alphaStart: 0.25, alphaEnd: 0.8 },
+    /**
+     * A shove (Enemy.shove). Gameplay moves the enemy at once; its body slides
+     * the rest of the way over `ms`, most of it in the first few frames, squashed
+     * by `squash` at the blow and springing back, dropping a puff of dust every
+     * `dustEveryMs` and kicking sparks off the spot it was hit.
+     */
+    shove: {
+      ms: 160, squash: 0.22, dustEveryMs: 20,
+      dust: { color: P.creamDim, life: 260, size: 5 },
+      sparks: 6, sparkSpeed: 170, sparkMs: 220,
+    },
   },
 
   basic: {
@@ -739,11 +750,14 @@ export const THEME = {
   },
 
   /**
-   * Kill gold: the score a kill earned, floating up over the slime with a coin,
-   * like League's last-hit gold. Kills this close together add into the
-   * popup still on screen instead of stacking a new one on top of it.
+   * Kill gold: the score a kill earned, with a coin, like League's last-hit
+   * gold. With `onMob` it floats up from the mob that died, in place of the
+   * killing blow's "-1", one popup per kill. Without it, it rides over the
+   * slime's head, and kills this close together add into the popup still on
+   * screen instead of stacking a new one on top of it.
    */
   killGold: {
+    onMob: true,
     color: P.gold,
     lifeMs: 900,
     risePx: 30,

@@ -10,6 +10,8 @@ import { Fx } from './Fx';
 import { PipBar } from './PipBar';
 import { dottedLine, dottedRing } from './pixelDraw';
 
+const NO_SHOVE = { dx: 0, dy: 0, left: 0 } as const;
+
 /** How one archetype looks. Gameplay radius and reach live on the entity, not here. */
 export interface EnemyArt {
   idle: readonly string[];
@@ -54,6 +56,8 @@ export class EnemyView {
   protected readonly body = { sx: 1, sy: 1, dx: 0, dy: 0 };
   private hitAge = Number.POSITIVE_INFINITY;
   private deathAge = 0;
+  /** A shove still playing out: where it was pushed from, relative to where it is, and how long ago. */
+  private shove: { dx: number; dy: number; age: number; dustAge: number } | null = null;
 
   constructor(
     protected readonly scene: Phaser.Scene,
@@ -72,9 +76,24 @@ export class EnemyView {
     this.hitAge = 0;
     const fx = Fx.of(this.scene);
     fx.hit(this.enemy.x, this.enemy.y, this.art.burst);
-    if (DEBUG.showDamageNumbers) {
+    // A killing blow shows the kill gold there instead, when it sits on the mob (RunFeedback).
+    if (DEBUG.showDamageNumbers && !(this.enemy.hp === 0 && THEME.killGold.onMob)) {
       fx.popup(this.enemy.x, this.enemy.y - this.enemy.radius - 6, '-1', THEME.enemy.damageNumber);
     }
+  }
+
+  /**
+   * The enemy was just shoved here from (fromX, fromY). Gameplay moved it at
+   * once; the body slides the rest of the way (THEME.enemy.shove), so the push
+   * reads as a blow and not a jump.
+   */
+  onShoved(fromX: number, fromY: number): void {
+    const dx = fromX - this.enemy.x;
+    const dy = fromY - this.enemy.y;
+    if (dx === 0 && dy === 0) return;
+    const S = THEME.enemy.shove;
+    this.shove = { dx, dy, age: 0, dustAge: S.dustEveryMs };
+    Fx.of(this.scene).sparks(fromX, fromY, [S.dust.color, THEME.fx.hit.color], S.sparks, S.sparkSpeed, S.sparkMs, 3, Math.atan2(-dy, -dx), Math.PI / 2);
   }
 
   /** The enemy just died. The kill is already counted; this is the pop. */
@@ -91,8 +110,10 @@ export class EnemyView {
     this.visualMs += ms;
     this.hitAge += ms;
 
-    const bx = Math.round(e.x);
-    const by = Math.round(e.y);
+    // Mid-shove, everything on the body is drawn trailing behind where gameplay put it.
+    const slide = this.advanceShove(ms);
+    const bx = Math.round(e.x + slide.dx);
+    const by = Math.round(e.y + slide.dy);
 
     if (e.spawning) {
       // Placeholder arrival cue on the fixed spawn spot. It only reads the
@@ -150,6 +171,9 @@ export class EnemyView {
     body.dx = 0;
     body.dy = 0;
     this.animate(nowMs, deltaSeconds);
+    // The blow squashes it, and it springs back as it settles.
+    body.sx *= 1 + THEME.enemy.shove.squash * slide.left;
+    body.sy *= 1 - THEME.enemy.shove.squash * slide.left;
     const pop = S * (1 + 0.12 * flash);
     this.sprite.setTexture(frame);
     // Feet planted: a squashed body sinks onto them, a stretched one rises from them.
@@ -165,9 +189,17 @@ export class EnemyView {
     else this.sprite.clearTint();
 
     this.shadow.setVisible(true).setPosition(bx, by + this.art.shadowOffsetY);
+    if (this.shove) {
+      // Dust off its feet as it skids: one puff per dustEveryMs, not per frame, so it looks the same at any frame rate.
+      this.shove.dustAge += ms;
+      if (this.shove.dustAge >= THEME.enemy.shove.dustEveryMs) {
+        this.shove.dustAge = 0;
+        Fx.of(this.scene).dust(bx, by + this.art.shadowOffsetY - 2, THEME.enemy.shove.dust);
+      }
+    }
 
     this.hpBar.setVisible(DEBUG.healthBars === 'always' || e.hp < e.maxHp);
-    this.hpBar.update(e.x, e.y + this.art.hpBarOffsetY, e.hp, e.maxHp, deltaSeconds);
+    this.hpBar.update(e.x + slide.dx, e.y + slide.dy + this.art.hpBarOffsetY, e.hp, e.maxHp, deltaSeconds);
 
     this.overlay.clear();
     this.drawStatuses(nowMs, bx, by);
@@ -205,6 +237,24 @@ export class EnemyView {
 
   private hideStatusIcons(): void {
     for (const icon of this.statusIcons.values()) icon.setVisible(false);
+  }
+
+  /**
+   * How far behind its spot the body is drawn this frame while a shove plays
+   * out, and how much of the shove is left (1 at the blow, 0 once settled).
+   * Eased out: most of the way in the first few frames, then settling.
+   */
+  private advanceShove(ms: number): { dx: number; dy: number; left: number } {
+    const s = this.shove;
+    if (!s) return NO_SHOVE;
+    s.age += ms;
+    const t = s.age / THEME.enemy.shove.ms;
+    if (t >= 1) {
+      this.shove = null;
+      return NO_SHOVE;
+    }
+    const left = (1 - t) ** 3;
+    return { dx: s.dx * left, dy: s.dy * left, left };
   }
 
   /** Archetype-specific body motion: write `this.body` (squash, stretch, nudge). Default: none. */

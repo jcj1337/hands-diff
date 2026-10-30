@@ -79,6 +79,8 @@ interface GoldPopup extends Popup {
   coin: Phaser.GameObjects.Image;
   amount: number;
   anchor: Anchor;
+  /** Later gold with the same key adds into this popup (see goldPopup). */
+  key: unknown;
 }
 
 export interface ParticleOptions {
@@ -118,8 +120,6 @@ export class Fx {
   private readonly rings: Ring[] = [];
   private readonly popups: Popup[] = [];
   private readonly golds: GoldPopup[] = [];
-  /** The newest kill-gold popup, which kills inside THEME.killGold.mergeMs add into. */
-  private lastGold: GoldPopup | null = null;
   private readonly shapes: Shape[] = [];
   private readonly ringGfx: Phaser.GameObjects.Graphics;
   /** Ground flashes: above the telegraphs, below every unit. */
@@ -266,13 +266,14 @@ export class Fx {
   /**
    * League-style last-hit gold: "+N" with a coin, rising from `anchor`. The
    * anchor is re-read every frame, so the popup rides along with whatever it
-   * is over (the slime's head) until it fades. A kill within
-   * THEME.killGold.mergeMs of the last one adds into that popup and restarts
-   * it, so a multi-kill reads as one number, not a pile.
+   * is over until it fades. Gold with the same `key` (the mob it came from,
+   * or one key for everything over the slime's head) within
+   * THEME.killGold.mergeMs of the last adds into that popup and restarts it,
+   * so a multi-kill, or a kill and its bonus, reads as one number, not a pile.
    */
-  goldPopup(anchor: Anchor, amount: number): void {
+  goldPopup(anchor: Anchor, amount: number, key: unknown): void {
     const K = THEME.killGold;
-    let p = this.lastGold?.active && this.lastGold.age < K.mergeMs ? this.lastGold : null;
+    let p = this.golds.find((q) => q.active && q.key === key && q.age < K.mergeMs) ?? null;
     if (p) {
       p.amount += amount;
     } else {
@@ -281,16 +282,15 @@ export class Fx {
         p = {
           text: pixelText(this.scene, 0, 0, '', 2).setOrigin(0.5, 1).setDepth(THEME.depth.text),
           coin: this.scene.add.image(0, 0, TEX.fx.coin).setOrigin(0.5, 1).setScale(K.coinScale).setDepth(THEME.depth.text),
-          active: false, x: 0, y: 0, age: 0, life: 1, rise: 0, amount: 0, anchor,
+          active: false, x: 0, y: 0, age: 0, life: 1, rise: 0, amount: 0, anchor, key,
         };
         this.golds.push(p);
       }
       p.amount = amount;
     }
-    Object.assign(p, { active: true, anchor, age: 0, life: K.lifeMs, rise: K.risePx });
+    Object.assign(p, { active: true, anchor, key, age: 0, life: K.lifeMs, rise: K.risePx });
     p.text.setText(`+${p.amount}`).setTint(K.color).setVisible(true);
     p.coin.setVisible(true);
-    this.lastGold = p;
     this.placeGold(p);
   }
 
@@ -461,6 +461,19 @@ export class Fx {
     });
   }
 
+  /** A puff of ground dust, under the units, swelling as it fades (a body skidding along). */
+  dust(x: number, y: number, style: { color: number; life: number; size: number }): void {
+    this.particle(TEX.px, x, y, {
+      life: style.life,
+      scale: style.size,
+      scaleTo: style.size + 3,
+      alpha: 0.7,
+      alphaTo: 0,
+      tint: style.color,
+      depth: THEME.depth.groundFx,
+    });
+  }
+
   // ----------------------------------------------------------------- frame
 
   update(deltaSeconds: number): void {
@@ -573,7 +586,6 @@ export class Fx {
       p.text.setVisible(false);
       p.coin.setVisible(false);
     }
-    this.lastGold = null;
     this.ringGfx.clear();
   }
 }

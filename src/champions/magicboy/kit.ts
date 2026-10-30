@@ -190,7 +190,7 @@ export class MagicBoyKit implements Kit {
     if (!target.active) return;
     this.ctx.combat.hit(target, target.takeHit());
     this.grantPassiveStack();
-    this.ctx.combat.bonus(BLINK_E.scoreBonus);
+    this.ctx.combat.bonus(BLINK_E.scoreBonus, target);
   }
 
   update(deltaSeconds: number, nowMs: number): void {

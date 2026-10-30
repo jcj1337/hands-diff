@@ -23,8 +23,8 @@ const SPIN_LOOK: AutoLook = { missile: 'spinAxe', fx: 'axe', muzzle: TEX.player.
  *      the axe is back in his hand, W is ready again, and he heals a little
  *   W  a burst of move speed that decays, and attack speed for a while
  *   E  a great axe a short way through everything: a pip, a slow, a shove aside
- *   R  two great axes down a line and back to him, turning just past the first
- *      enemy they hit or when he presses R again: a pip each way
+ *   R  two great axes down a line and back to him, turning a good way past the
+ *      first enemy they hit or when he presses R again: a pip each way
  *
  * The engine owns the autos; through `autoShot` this changes the one that
  * leaves while he holds an axe. Everything about the falling axe (where, when,
@@ -198,14 +198,11 @@ export class AxeManKit implements Kit {
     this.ctx.combat.hit(target, target.takeHit());
     if (!target.active) return;
     target.applySlow(CLEAVE_SLOW, E.slowFraction, this.now, E.slowMs);
-    if (target.unstoppable || target.held) return;
     // Shoved off the line, to whichever side of it they were on.
     const nx = -Math.sin(angle);
     const ny = Math.cos(angle);
     const side = (target.x - from.x) * nx + (target.y - from.y) * ny >= 0 ? 1 : -1;
-    const m = ARENA.padding + target.radius;
-    target.x = Phaser.Math.Clamp(target.x + nx * side * E.knockPx, m, ARENA.width - m);
-    target.y = Phaser.Math.Clamp(target.y + ny * side * E.knockPx, m, ARENA.height - m);
+    target.shove(nx * side * E.knockPx, ny * side * E.knockPx);
   }
 
   private onWhirlHit(target: Enemy, leg: WhirlLeg): void {
