@@ -669,6 +669,15 @@ export const DIFFICULTY = {
    */
   aimSpeed: { base: 900, k: 0.35, max: 1800 } as Curve,
   /**
+   * How long an enemy takes to notice a blink (Flash, a champion's blink), in
+   * ms: until then its aim cursor, and the velocity a caster leads by, hold
+   * where they were; then the cursor chases at `aimSpeed` as usual. A human's
+   * reaction time, so a blink late in a tracking cast (the Magus's Lance)
+   * leaves it aimed at empty ground, while an early one is still caught.
+   * Sharper with the stage, flooring about when `aimSpeed` caps.
+   */
+  blinkReactionMs: { base: 350, k: -0.25, min: 200 } as Curve,
+  /**
    * How quickly a caster picks up a change in your direction, for a spell it
    * places in one go: the velocity it leads by turns toward your real one as
    * if the point this many ms ahead of you moved at its aim speed. Reversing

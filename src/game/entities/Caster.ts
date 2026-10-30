@@ -31,7 +31,8 @@ export abstract class Caster extends Enemy {
   /**
    * The velocity it thinks you have: it turns toward your real one at a capped
    * rate (DIFFICULTY.aimLeadCatchUpMs), so clicking back and forth doesn't
-   * re-aim a spell the instant you flip.
+   * re-aim a spell the instant you flip. Like its cursor, it holds while it
+   * has lost sight of a blink.
    */
   readonly seenVelocity = { x: 0, y: 0 };
 
@@ -49,6 +50,12 @@ export abstract class Caster extends Enemy {
   protected abstract get tuning(): CasterTuning;
 
   override update(deltaSeconds: number, nowMs: number, ctx: EnemyContext): void {
+    if (!this.active || !this.lostSight(nowMs, ctx)) this.followVelocity(deltaSeconds, ctx);
+    super.update(deltaSeconds, nowMs, ctx);
+  }
+
+  /** Turn `seenVelocity` toward the player's real velocity, at its capped rate. */
+  private followVelocity(deltaSeconds: number, ctx: EnemyContext): void {
     const v = this.seenVelocity;
     const dx = ctx.player.vx - v.x;
     const dy = ctx.player.vy - v.y;
@@ -61,7 +68,6 @@ export abstract class Caster extends Enemy {
       v.x += (dx / gap) * step;
       v.y += (dy / gap) * step;
     }
-    super.update(deltaSeconds, nowMs, ctx);
   }
 
   /**

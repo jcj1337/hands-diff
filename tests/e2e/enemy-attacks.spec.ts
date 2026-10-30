@@ -24,7 +24,7 @@ test('enemy attacks: unlock stages, basic spit + attack tokens, Pursuer dash', a
     g.attackTokens.clear();
     g.player.hp = 100; g.player.lastHitAt = Number.NEGATIVE_INFINITY;
     g.player.stunnedUntil = 0; g.stunBuffered = null;
-    g.player.x = px; g.player.y = py; g.player.stop();
+    g.player.x = px; g.player.y = py; g.player.stop(); g.player.blinkedAt = Number.NEGATIVE_INFINITY;
     g.attacks.cancel(); g.attacks.state = 'idle'; g.attacks.clearMissiles(); g.projectiles.clear();
     return g.director.difficulty;
   }, { stage, px, py });
@@ -144,6 +144,30 @@ test('enemy attacks: unlock stages, basic spit + attack tokens, Pursuer dash', a
       ? pass(`the next spit is ~${Math.round(next)}ms away (Stage 10 cooldown ${Math.round(cooldown)}, down from ${cfg.spit.cooldownMs}, ±${cfg.spit.cooldownJitter * 100}%)`)
       : fail(`next spit in ${Math.round(next)}ms`);
   }
+  // Flash late in the windup: it loses you for its reaction time, so the glob flies where you were.
+  await calm();
+  await place([{ type: 'basic', x: 840, y: 360 }]);
+  const flashed = await page.evaluate(() => new Promise<any>((res) => {
+    const g = window.__warmup.scene.getScene('GameScene');
+    const e = g.director.enemies[0];
+    g.cooldowns.reset();
+    let leftMs = null;
+    let firedAt = null;
+    const tick = () => {
+      const left = e.spitEndsAt - g.clock.now;
+      if (leftMs === null && e.spitting && left <= e.blinkReactionMs - 100) {
+        leftMs = left;
+        g.blink.castFlash(g.player.x, g.player.y + 400);
+      }
+      if (leftMs !== null && firedAt === null && g.hostileSpells.globCount > 0) firedAt = g.clock.now;
+      if (firedAt !== null && (g.hostileSpells.globCount === 0 || g.clock.now - firedAt >= 1500)) res({ leftMs, hp: g.player.hp, reactionMs: e.blinkReactionMs });
+      else requestAnimationFrame(tick);
+    };
+    tick();
+  }));
+  flashed.leftMs !== null && flashed.hp === 100
+    ? pass(`Flash with ${Math.round(flashed.leftMs)}ms of the windup left (under its ${Math.round(flashed.reactionMs)}ms reaction): the glob flies where you were`)
+    : fail(`Flash during a spit: ${JSON.stringify(flashed)}`);
 
   // === 3. Attack tokens ======================================================
   section('3. Attack tokens');

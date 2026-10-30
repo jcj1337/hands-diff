@@ -39,6 +39,8 @@ export interface EnemyContext {
     vy: number;
     /** True while the player is stunned and cannot act. */
     stunned: boolean;
+    /** Clock time of the player's last blink, or -Infinity (see Enemy.lostSight). */
+    blinkedAt: number;
   };
   /**
    * Apply damage to the player, tagged with who dealt it and how ('attack' by
@@ -127,12 +129,15 @@ export abstract class Enemy {
   /**
    * Its aim cursor: where it is aiming, which is where it last saw you unless
    * a cast is tracking somewhere else (trackAim). It travels at `aimSpeed`
-   * instead of snapping, so a blink leaves it behind until it catches up.
+   * instead of snapping, and holds still for `blinkReactionMs` after a blink,
+   * so a blink leaves it behind until it notices and catches up.
    * Everything an enemy aims reads this, never the player's position.
    */
   public readonly aim = { x: 0, y: 0 };
   /** DIFFICULTY.aimSpeed on its stage, in px/s, before the mode's multiplier. */
   public readonly aimSpeed: number;
+  /** DIFFICULTY.blinkReactionMs on its stage. */
+  public readonly blinkReactionMs: number;
   private aimPlaced = false;
   private aimTracked = false;
   /** Slows a champion applied: id → the fraction and when it lapses. The strongest live one counts. */
@@ -199,6 +204,7 @@ export abstract class Enemy {
     this.stage = opts.stage;
     this.baseMoveScale = scaled(DIFFICULTY.moveSpeed, opts.stage);
     this.aimSpeed = scaled(DIFFICULTY.aimSpeed, opts.stage);
+    this.blinkReactionMs = scaled(DIFFICULTY.blinkReactionMs, opts.stage);
     this.maxHp = opts.maxHp;
     this.hp = opts.maxHp;
   }
@@ -365,11 +371,13 @@ export abstract class Enemy {
   /**
    * Move the aim cursor toward a point, at most its speed × the frame. A cast
    * that tracks (a charging line, a reticle) calls this each frame with where
-   * it wants to aim; otherwise the cursor follows the player.
+   * it wants to aim; otherwise the cursor follows the player. It stays put
+   * while the enemy has lost sight of a blink.
    * @returns the cursor.
    */
   protected trackAim(x: number, y: number, deltaSeconds: number, ctx: EnemyContext): { x: number; y: number } {
     this.aimTracked = true;
+    if (this.lostSight(this.now, ctx)) return this.aim;
     const dx = x - this.aim.x;
     const dy = y - this.aim.y;
     const dist = Math.hypot(dx, dy);
@@ -382,6 +390,11 @@ export abstract class Enemy {
       this.aim.y += (dy / dist) * step;
     }
     return this.aim;
+  }
+
+  /** True for `blinkReactionMs` after the player blinks: it hasn't seen where you went yet. */
+  protected lostSight(nowMs: number, ctx: EnemyContext): boolean {
+    return nowMs < ctx.player.blinkedAt + this.blinkReactionMs;
   }
 
   /** Put the aim cursor on a point at once (its arrival; the suites, after moving the player by hand). */

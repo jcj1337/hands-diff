@@ -24,7 +24,7 @@ test('magus: roster + pips, spacing, Lance / Eye / Orb / Rite, stun rules, zones
     g.player.hp = hp; g.player.lastHitAt = Number.NEGATIVE_INFINITY;
     g.player.stunnedUntil = 0; g.player.slowUntil = 0; g.player.slowFraction = 0;
     g.stunBuffered = null;
-    g.player.x = px; g.player.y = py; g.player.stop();
+    g.player.x = px; g.player.y = py; g.player.stop(); g.player.blinkedAt = Number.NEGATIVE_INFINITY;
     g.attacks.cancel(); g.attacks.state = 'idle'; g.attacks.clearMissiles(); g.projectiles.clear();
     g.cast.cancel(); g.cooldowns.reset();
   }, { px, py, hp });
@@ -175,26 +175,26 @@ test('magus: roster + pips, spacing, Lance / Eye / Orb / Rite, stun rules, zones
 
   // === 3b. The aim cursor ====================================================
   section('3b. Aim cursor');
-  // A blink mid-charge: the line doesn't snap to you, it sweeps over at the Magus's aim speed.
+  // A blink early in the charge: the Magus loses you for its reaction time, then the line sweeps over at its aim speed.
   await calm();
   await place([{ type: 'magus', x: 1040, y: 360 }]);
   await castNow('lance');
-  await page.waitForFunction(() => {
-    const g = window.__warmup.scene.getScene('GameScene');
-    const m = g.director.enemies[0];
-    return m.state === 'lance' && m.castProgress(g.clock.now) > 0.25;
-  }, null, { timeout: 4000 });
+  await page.waitForFunction(() => window.__warmup.scene.getScene('GameScene').director.enemies[0].state === 'lance', null, { timeout: 4000 });
   const sweep = await page.evaluate(() => new Promise<any>((res) => {
     const g = window.__warmup.scene.getScene('GameScene');
     const m = g.director.enemies[0];
     const before = Math.hypot(m.aim.x - g.player.x, m.aim.y - g.player.y);
+    const from = { x: m.aim.x, y: m.aim.y };
     g.blink.blinkTo({ x: 640, y: 560 });
     const t0 = g.clock.now;
     const frames = [];
     const tick = () => {
       const toCursor = Math.atan2(m.aim.y - m.y, m.aim.x - m.x);
-      frames.push({ t: g.clock.now - t0, ax: m.aim.x, ay: m.aim.y, off: Math.hypot(m.aim.x - g.player.x, m.aim.y - g.player.y), skew: Math.abs(Math.sin(m.aimAngle - toCursor)) });
-      if (g.clock.now - t0 >= 420 || m.state !== 'lance') res({ before, frames, speed: m.aimSpeed * g.mode.aimSpeedMultiplier });
+      frames.push({
+        t: g.clock.now - t0, ax: m.aim.x, ay: m.aim.y, held: Math.hypot(m.aim.x - from.x, m.aim.y - from.y),
+        off: Math.hypot(m.aim.x - g.player.x, m.aim.y - g.player.y), skew: Math.abs(Math.sin(m.aimAngle - toCursor)),
+      });
+      if (g.clock.now - t0 >= 900 || m.state !== 'lance') res({ before, frames, speed: m.aimSpeed * g.mode.aimSpeedMultiplier, reactionMs: m.blinkReactionMs });
       else requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -202,23 +202,58 @@ test('magus: roster + pips, spacing, Lance / Eye / Orb / Rite, stun rules, zones
   {
     const f = sweep.frames;
     const jump = 200;
-    const early = f.find((s) => s.t > 0 && s.t <= 80);
-    sweep.before < 2 && early && early.off >= jump - sweep.speed * (early.t / 1000) - 12
-      ? pass(`a 200px blink mid-charge leaves the Lance behind: ${Math.round(early.off)}px off you ${Math.round(early.t)}ms later`)
-      : fail(`after the blink: before ${sweep.before}, early ${JSON.stringify(early)}`);
+    const blind = f.filter((s) => s.t > 0 && s.t < sweep.reactionMs - 20);
+    sweep.before < 2 && blind.length > 0 && blind.every((s) => s.held < 1)
+      ? pass(`a 200px blink mid-charge loses it: the line holds where you were for its ${Math.round(sweep.reactionMs)}ms reaction`)
+      : fail(`after the blink: before ${sweep.before}, while blind ${JSON.stringify(blind.find((s) => s.held >= 1))}`);
     const top = Math.max(...f.slice(1).map((s, i) => (s.t > f[i].t ? Math.hypot(s.ax - f[i].ax, s.ay - f[i].ay) / (s.t - f[i].t) * 1000 : 0)));
     top <= sweep.speed * 1.1 && top >= sweep.speed * 0.9
-      ? pass(`its cursor travels at ~${Math.round(top)}px/s (aim speed ${Math.round(sweep.speed)})`)
+      ? pass(`then its cursor travels at ~${Math.round(top)}px/s (aim speed ${Math.round(sweep.speed)})`)
       : fail(`cursor speed ${Math.round(top)}px/s vs ${Math.round(sweep.speed)}`);
     const arrived = f.find((s) => s.off < 1);
-    const due = (jump / sweep.speed) * 1000;
+    const due = sweep.reactionMs + (jump / sweep.speed) * 1000;
     arrived && Math.abs(arrived.t - due) <= 60
-      ? pass(`and is back on you after ~${Math.round(arrived.t)}ms (200px at that speed: ${Math.round(due)}ms)`)
+      ? pass(`and is back on you after ~${Math.round(arrived.t)}ms (reaction + 200px at that speed: ${Math.round(due)}ms)`)
       : fail(`arrival: ${arrived ? arrived.t : 'never'} vs ${Math.round(due)}ms`);
     f.every((s) => s.skew < 0.02)
       ? pass('the charge line points at the cursor the whole way')
       : fail(`the line left its cursor (skew ${Math.max(...f.map((s) => s.skew)).toFixed(3)})`);
   }
+  // Flash against a Lance: late in the charge it locks on empty ground; early, it finds you again.
+  /**
+   * Cast a Lance and Flash straight down off its line: 'early' on its first
+   * charging frame, 'late' once less of the charge is left than the Magus's
+   * reaction. Resolves when the line lands.
+   */
+  const flashLance = async (when: 'early' | 'late') => {
+    await calm();
+    await place([{ type: 'magus', x: 1040, y: 360 }]);
+    await castNow('lance');
+    return page.evaluate((when) => new Promise<any>((res) => {
+      const g = window.__warmup.scene.getScene('GameScene');
+      const m = g.director.enemies[0];
+      const resolved = g.hostileSpells.zonesResolved;
+      let leftMs = null;
+      const tick = () => {
+        const left = m.stateEndsAt - g.clock.now;
+        if (leftMs === null && m.state === 'lance' && (when === 'early' || left <= m.blinkReactionMs - 100)) {
+          leftMs = left;
+          g.blink.castFlash(g.player.x, g.player.y + 400);
+        }
+        if (g.hostileSpells.zonesResolved > resolved) res({ leftMs, hp: g.player.hp, reactionMs: m.blinkReactionMs });
+        else requestAnimationFrame(tick);
+      };
+      tick();
+    }), when);
+  };
+  const late = await flashLance('late');
+  late.leftMs !== null && late.hp === 100
+    ? pass(`Flash with ${Math.round(late.leftMs)}ms of the charge left (under its ${Math.round(late.reactionMs)}ms reaction): the line locks where you were and misses`)
+    : fail(`late Flash: ${JSON.stringify(late)}`);
+  const early = await flashLance('early');
+  early.leftMs !== null && early.hp === 100 - cfg.magus.lance.damage
+    ? pass(`Flash with ${Math.round(early.leftMs)}ms of the charge left: it finds you again and hits for ${cfg.magus.lance.damage}`)
+    : fail(`early Flash: ${JSON.stringify(early)}`);
   // Clicking back the other way: the velocity it leads by turns round at a capped rate, it doesn't flip.
   await calm(400, 360);
   await place([{ type: 'magus', x: 1040, y: 600 }]);
@@ -252,8 +287,8 @@ test('magus: roster + pips, spacing, Lance / Eye / Orb / Rite, stun rules, zones
   {
     const s = await page.evaluate(() => {
       const d = window.__warmup.scene.getScene('GameScene').director;
-      const at = (stage) => { d.stageIndex = stage - 1; const m = d.spawnEnemy('magus'); const o = { speed: m.aimSpeed, spread: m.aimSpreadScale }; m.destroy(); return o; };
-      const out = { s1: at(1), s10: at(10), s40: at(40), curve: window.__balance.DIFFICULTY.aimSpeed,
+      const at = (stage) => { d.stageIndex = stage - 1; const m = d.spawnEnemy('magus'); const o = { speed: m.aimSpeed, spread: m.aimSpreadScale, reaction: m.blinkReactionMs }; m.destroy(); return o; };
+      const out = { s1: at(1), s10: at(10), s40: at(40), curve: window.__balance.DIFFICULTY.aimSpeed, reaction: window.__balance.DIFFICULTY.blinkReactionMs,
         modes: Object.fromEntries(Object.values(window.__balance.MODES).map((m: any) => [m.id, m.aimSpeedMultiplier])) };
       d.stageIndex = 0;
       return out;
@@ -264,6 +299,9 @@ test('magus: roster + pips, spacing, Lance / Eye / Orb / Rite, stun rules, zones
     s.s1.spread === 1 && s.s10.spread < 0.85 && s.s40.spread >= 0.4
       ? pass(`aim spread shrinks with the stage: x${s.s10.spread.toFixed(2)} at 10, x${s.s40.spread.toFixed(2)} at 40`)
       : fail(`aim spread: ${JSON.stringify(s)}`);
+    s.s1.reaction === s.reaction.base && s.s10.reaction < s.s1.reaction && s.s10.reaction > s.reaction.min && s.s40.reaction === s.reaction.min
+      ? pass(`its blink reaction sharpens with the stage and floors: ${s.s1.reaction}ms at Stage 1, ${Math.round(s.s10.reaction)}ms at 10, ${s.s40.reaction}ms at 40`)
+      : fail(`blink reaction: ${JSON.stringify({ s1: s.s1.reaction, s10: s.s10.reaction, s40: s.s40.reaction, curve: s.reaction })}`);
     s.modes.easy < s.modes.normal && s.modes.normal === 1 && s.modes.hard > 1
       ? pass(`modes scale it: Easy x${s.modes.easy}, Normal x1, Hard x${s.modes.hard}`)
       : fail(`mode aim speeds: ${JSON.stringify(s.modes)}`);

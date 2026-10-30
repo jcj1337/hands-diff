@@ -46,6 +46,8 @@ export class Player {
   /** Velocity this frame in px/s (0 while standing, rooted or stunned). Read by enemies that lead their aim. */
   public vx = 0;
   public vy = 0;
+  /** Clock time of the last blink (E / Flash). Enemies lose you for a moment after it (DIFFICULTY.blinkReactionMs). */
+  public blinkedAt = -Infinity;
 
   readonly view: PlayerView;
   private readonly viewState: PlayerViewState;
@@ -149,6 +151,7 @@ export class Player {
   blinkTo(x: number, y: number): void {
     this.x = Phaser.Math.Clamp(x, ARENA.padding + this.radius, ARENA.width - ARENA.padding - this.radius);
     this.y = Phaser.Math.Clamp(y, ARENA.padding + this.radius, ARENA.height - ARENA.padding - this.radius);
+    this.blinkedAt = this.now;
     this.stop();
   }
 

@@ -661,6 +661,7 @@ export class GameScene extends Phaser.Scene {
         vx: this.player.vx,
         vy: this.player.vy,
         stunned: this.player.isStunned,
+        blinkedAt: this.player.blinkedAt,
       },
       damagePlayer: (amount, source, kind) => this.combat.enemyHit(amount, source, kind),
       stunPlayer: (ms) => this.stunPlayer(ms),

@@ -69,7 +69,8 @@ this file is for working on the code.
   the enemy side; player damage is HP.
 - Gameplay state flips first; views and effects read it afterwards and never feed back.
 - Enemies never aim at the player's position: they aim at their cursor (`Enemy.aim`),
-  which chases it at `DIFFICULTY.aimSpeed`. A cast that tracks calls `trackAim`; a spell
+  which chases it at `DIFFICULTY.aimSpeed` and holds still for `DIFFICULTY.blinkReactionMs`
+  after a blink (`Enemy.lostSight`). A cast that tracks calls `trackAim`; a spell
   placed at once reads `aim` (casters: `aimPoint`). Movement still reads the player.
 - A difficulty mode is only numbers (`MODES`): the engine reads them and never tests which
   mode it is. Mode-dependent registry reads go through `enemyEntry(id, mode)`, not

@@ -54,6 +54,9 @@ const PORTRAITS: Record<string, string> = {
 /** Damage sources that aren't a mob (mobs are named by ENEMIES). */
 const HAZARD_NAMES: Record<string, string> = { edgeFire: 'Edge fire' };
 
+/** What the death card calls a killer instead of its name. Dying to edge fire is rare enough to laugh at. */
+const KILLER_NAMES: Record<string, string> = { edgeFire: 'XD' };
+
 const SCORE_PARTS = [
   { key: 'kills', label: 'KILLS' },
   { key: 'speed', label: 'CLEAR SPEED BONUS' },
@@ -273,7 +276,8 @@ export class EndScreen {
 
   /** The killer's portrait and name, beside who took your HP in the stage that ended the run. */
   private drawDeathCard(result: RoundResult, row: (label: string, value: string) => string): void {
-    const killer = result.killedBy ? sourceOf(result.killedBy) : null;
+    const source = result.killedBy ? sourceOf(result.killedBy) : null;
+    const killer = source && { ...source, label: KILLER_NAMES[source.id] ?? source.label };
 
     if (killer) {
       const frame = this.put(this.scene.add.graphics());

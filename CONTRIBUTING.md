@@ -78,8 +78,9 @@ New code needs to keep these rules.
 - **Gameplay changes state first.** Views and effects read that state afterwards and never
   change it.
 - **Enemies aim at a cursor of their own.** An enemy aims at its `aim` point, which moves
-  toward the player at `DIFFICULTY.aimSpeed`. No enemy aims straight at the player's
-  position.
+  toward the player at `DIFFICULTY.aimSpeed`. After a blink it stays put for
+  `DIFFICULTY.blinkReactionMs`, as a person would take a moment to notice. No enemy aims
+  straight at the player's position.
 - **No engine code checks for a champion or a mode.** Each champion's behaviour lives in
   its kit, and a difficulty mode is only a set of numbers that the engine reads.
 - **Phaser is trimmed.** `src/phaser.js` lists the parts of Phaser that the game ships.
