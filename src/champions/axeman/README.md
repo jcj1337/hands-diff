@@ -65,8 +65,11 @@ enemy once on the way out and once on the way back. The second press isn't a new
 so the cooldown runs from the first.
 
 **His look.** He's a rugged, off-white slime with heavy brows, a scar, a full unkempt
-brown beard, and a black crown tipped and banded in gold. His plain auto is a small
-thrown axe. A spinning axe is larger, has red edges and leaves a red trail.
+brown beard, and a black crown tipped and banded in gold. His axes are dark gunmetal
+with a pale cutting edge, so they stand out against his pale body. His plain auto is a
+small bearded hatchet. A spinning axe is the same hatchet rimmed in red, with a red band
+on its haft, and it leaves a red trail. The ones in his hands turn just behind him, one at
+each side. E and R throw a great double-bitted axe, drawn a size larger for R.
 
 You can tune him from the browser console, for example `__axeMan.Q.dropMaxPx = 240` or
 `__axeMan.Q.airMs = 1200`.

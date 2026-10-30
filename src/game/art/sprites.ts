@@ -434,23 +434,68 @@ export const SPRITES: Record<string, PixelSprite> = {
   /** Snake Lady's auto: a slim needle of venom, a third the height of Magic Boy's bolt. */
   proj_venom: { rows: ['dgGGGWW'], pal: { d: P.toxinDeepest, g: P.toxinDeep, G: P.toxin, W: P.toxinLight } },
   // ---- axeman: his thrown axes and ability icons -----------------------------------
-  //   S steel · W glint · h handle · k outline (ink; blood-red on a spinning axe)
+  //   axes: S gunmetal · s its shade · W the bit's pale edge · h haft · d butt · r red band
+  //   k outline (ink; blood-red on a spinning axe)
+  /** His plain auto: a bearded hatchet, the bit taller than where it meets the haft, a stub of a butt behind. */
   proj_axe: {
-    rows: ['...kkk...', '..kSWSk..', '.kSWWSSk.', '.kSSSShk.', '..kkShk..', '....khk..', '.....khk.', '......khk', '.......kk'],
-    pal: { k: P.ink, S: P.steel, W: P.steelShine, h: P.beard },
+    rows: [
+      '..kkkkkkkk.',
+      '.kWSSSSShSk',
+      'kWSSSSSShSk',
+      'kWSSSSskhk.',
+      'kWSSsskkhk.',
+      'kWSsk..khk.',
+      '.kWk...khk.',
+      '..k....khk.',
+      '.......khk.',
+      '.......kdk.',
+      '........k..',
+    ],
+    pal: { k: P.ink, S: P.gunmetal, s: P.gunmetalDeep, W: P.gunmetalEdge, h: P.haft, d: P.beardDark },
   },
-  /** A spinning axe: in his hand, thrown by an empowered auto, and coming down to be caught. */
+  /** A spinning axe: the hatchet rimmed in red, a red band on a longer haft. In his hand, thrown by an empowered auto, and coming down to be caught. */
   proj_spin_axe: {
-    rows: ['...kkk...', '..kSWSk..', '.kSWWSSk.', '.kSSSShk.', '..kkShk..', '....khk..', '.....khk.', '......khk', '.......kk'],
-    pal: { k: P.blood, S: P.steel, W: P.steelShine, h: P.beardLight },
+    rows: [
+      '..kkkkkkkk.',
+      '.kWSSSSShSk',
+      'kWSSSSSShSk',
+      'kWSSSSskhk.',
+      'kWSSsskkhk.',
+      'kWSsk..khk.',
+      '.kWk...khk.',
+      '..k....khk.',
+      '.......krk.',
+      '.......khk.',
+      '.......kdk.',
+      '........k..',
+    ],
+    pal: { k: P.blood, S: P.gunmetal, s: P.gunmetalDeep, W: P.gunmetalEdge, h: P.haft, r: P.blood, d: P.beardDark },
   },
-  /** A double-bitted axe: his E, and his R drawn larger. */
+  /** A great double-bitted axe, two tall crescents on a haft that shows above and below the head: his E, and his R drawn larger. */
   proj_cleave: {
     rows: [
-      '.kkk...kkk.', 'kSWSk.kSWSk', 'kSWWSkSWWSk', 'kSSSShSSSSk', '.kkShhhSkk.',
-      '...khhhk...', '....khk....', '....khk....', '....khk....', '....kkk....',
+      '........kkk........',
+      '........khk........',
+      '..kk....khk....kk..',
+      '.kWSk...khk...kSWk.',
+      'kWSSSk..khk..kSSSWk',
+      'kWSSSSk.khk.kSSSSWk',
+      'kWSSSSSkkhkkSSSSSWk',
+      'kWSSSSSSSsSSSSSSSWk',
+      'kWSSSSSSSsSSSSSSSWk',
+      'kWSSssSSSsSSSssSSWk',
+      'kWSsssskkhkkssssSWk',
+      'kWsssskkkhkkkssssWk',
+      'kWsssk..khk..ksssWk',
+      '.kWsk...khk...ksWk.',
+      '..kk....khk....kk..',
+      '........krk........',
+      '........khk........',
+      '........krk........',
+      '........kdk........',
+      '.........k.........',
     ],
-    pal: { k: P.bloodDeep, S: P.steel, W: P.steelShine, h: P.beard },
+    pal: { k: P.ink, S: P.gunmetal, s: P.gunmetalDeep, W: P.gunmetalEdge, h: P.haft, r: P.blood, d: P.beardDark },
   },
   icon_axe_q: {
     rows: [

@@ -196,6 +196,11 @@ export const PALETTE = {
   steelDeep: 0x5a6172,
   steel: 0xaab3c4,
   steelShine: 0xf2f6ff,
+  /** His axe heads: darker than his off-white body and the pale flashes, with a pale bit edge to catch the eye. */
+  gunmetalDeep: 0x4b5263,
+  gunmetal: 0x747d90,
+  gunmetalEdge: 0xc3cad6,
+  haft: 0x8a5a2e,
   bloodDeep: 0x7a1420,
   blood: 0xe0363f,
   bloodCore: 0xffd9d2,
@@ -574,7 +579,7 @@ export const THEME = {
    */
   axeman: {
     /** Held axes: this far out to each side, lifted off the ground, bobbing, turning. */
-    held: { sidePx: 19, liftPx: 9, bobPx: 2, bobMs: 520, turnsPerSecond: 2.2 },
+    held: { sidePx: 24, liftPx: 8, bobPx: 2, bobMs: 520, turnsPerSecond: 2.2 },
     drop: {
       /** The falling axe: how high its arc peaks, and how fast it turns. */
       arcPx: 74,
@@ -590,9 +595,13 @@ export const THEME = {
       catchSparks: 9,
       missColor: P.creamFaint,
     },
-    /** E's axe at this scale (an 11px sprite), near as wide as its hitbox; R is the same sprite, a little larger still. */
-    cleaveScale: 9,
-    whirlScale: 7,
+    /**
+     * E's axe at the game's usual 3 world px per art px (a 19px sprite, 57px across:
+     * about half its hitbox, so it reads as an axe rather than a wall); R is the
+     * same sprite a size larger.
+     */
+    cleaveScale: 3,
+    whirlScale: 4,
     /** W: a ring off his feet as the rush starts. */
     rushRingPx: 40,
     rushRingMs: 240,

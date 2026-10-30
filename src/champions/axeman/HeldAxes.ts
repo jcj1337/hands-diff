@@ -29,6 +29,7 @@ export class HeldAxes {
         return;
       }
       // The first is on his right; the second mirrors it, turning the other way, half a bob out of step.
+      // Just behind his body, so a haft swinging inward passes behind him rather than across his face.
       const side = i === 0 ? 1 : -1;
       const bob = Math.sin((this.ms / H.bobMs) * Math.PI * 2 + i * Math.PI) * H.bobPx;
       axe
@@ -36,7 +37,7 @@ export class HeldAxes {
         .setFlipX(side < 0)
         .setPosition(Math.round(x + side * H.sidePx), Math.round(y - H.liftPx + bob))
         .setRotation(side * this.turn)
-        .setDepth(actorDepth(y) + 0.00005);
+        .setDepth(actorDepth(y) - 0.00005);
     });
   }
 
