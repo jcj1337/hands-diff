@@ -7,6 +7,7 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
   const cfg = await page.evaluate(() => ({
     Q: window.__axeMan.Q, W: window.__axeMan.W, E: window.__axeMan.E, R: window.__axeMan.R,
     LEVELS: window.__axeMan.LEVELS, STATS: window.__axeMan.STATS, AUTO: window.__axeMan.AUTO,
+    ARENA: window.__balance.ARENA,
   }));
   const G = () => page.evaluate(() => {
     const g = window.__warmup.scene.getScene('GameScene');
@@ -347,7 +348,7 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
 
   // === 7. R ======================================================================
   section('7. R');
-  await stage([{ x: 900, y: 360, hp: 5 }]);
+  await stage([{ x: 900, y: 360, hp: 5 }, { x: 1150, y: 360, hp: 5 }]);
   await page.mouse.move(1100, 360);
   await page.keyboard.press('KeyR');
   await page.waitForFunction(() => window.__warmup.scene.getScene('GameScene').kit.rHits >= 1, null, { timeout: 4000 });
@@ -356,7 +357,7 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
     out.enemies[0].hp === 5 - cfg.R.pips && out.whirls === 1
       ? pass(`R flies down its line through everything: ${cfg.R.pips} pip on the way out`)
       : fail(`R out: hp ${out.enemies[0].hp}, whirls ${out.whirls}`);
-    // It carries on a little past the first enemy, then turns. He walks off the line; it still comes home, hitting again.
+    // It flies on past every enemy to the arena's edge, then turns. He walks off the line; it still comes home, hitting again.
     await page.evaluate(() => { const g = window.__warmup.scene.getScene('GameScene'); g.player.moveTo(g.player.x - 60, g.player.y); });
     const furthest = await page.evaluate(() => new Promise<number>((res) => {
       const g = window.__warmup.scene.getScene('GameScene');
@@ -370,13 +371,13 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
       tick();
     }));
     const back = await G();
-    const hitAt = 900 - cfg.R.radius - 28;
-    furthest > 900 && furthest <= hitAt + cfg.R.overshootPx + 40
-      ? pass(`it turns ~${cfg.R.overshootPx}px past the first enemy it hits (reached x ${Math.round(furthest)}, the enemy at 900), not at the arena's edge`)
-      : fail(`R turn: furthest x ${furthest}, hit near ${hitAt}`);
-    back.enemies[0].hp === 5 - cfg.R.pips - cfg.R.returnPips && back.stats.rHits === 2
-      ? pass(`and flies back to him, wherever he went: ${cfg.R.returnPips} pip again on the way home`)
-      : fail(`R back: hp ${back.enemies[0].hp}, stats ${JSON.stringify(back.stats)}`);
+    const edge = cfg.ARENA.width - cfg.ARENA.padding;
+    furthest >= edge && furthest <= edge + 40
+      ? pass(`it flies on past the enemies to the arena's edge before turning (reached x ${Math.round(furthest)}, the edge at ${edge})`)
+      : fail(`R turn: furthest x ${furthest}, the edge at ${edge}`);
+    back.enemies.every((e) => e.hp === 5 - cfg.R.pips - cfg.R.returnPips) && back.stats.rHits === 4
+      ? pass(`and flies back to him, wherever he went: both enemies on its line lose ${cfg.R.pips} pip out and ${cfg.R.returnPips} back`)
+      : fail(`R back: hp ${back.enemies.map((e) => e.hp)}, stats ${JSON.stringify(back.stats)}`);
   }
   // R again while it is still going out: it turns at once. The second press is not a new cast.
   await stage([{ x: 300, y: 620, hp: 5 }]);

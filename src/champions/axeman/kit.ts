@@ -23,8 +23,8 @@ const SPIN_LOOK: AutoLook = { missile: 'spinAxe', fx: 'axe', muzzle: TEX.player.
  *      the axe is back in his hand, W is ready again, and he heals a little
  *   W  a burst of move speed that decays, and attack speed for a while
  *   E  a great axe a short way through everything: a pip, a slow, a shove aside
- *   R  two great axes down a line and back to him, turning a good way past the
- *      first enemy they hit or when he presses R again: a pip each way
+ *   R  two great axes down a line and back to him, turning at the arena's edge
+ *      or when he presses R again: a pip each way
  *
  * The engine owns the autos; through `autoShot` this changes the one that
  * leaves while he holds an axe. Everything about the falling axe (where, when,

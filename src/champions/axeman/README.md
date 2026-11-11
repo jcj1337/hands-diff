@@ -13,7 +13,7 @@ in the pause menu.
 | Q | instant, interrupts nothing | 7000ms† | self | readies one axe (he holds 2) |
 | W | instant, interrupts nothing | 12000ms†, **reset by a catch** | self | 0 |
 | E | 250ms | 10000ms† | 240 (about his auto range), 60 either side of its line, pierces | 1, a 40% slow for 2s, and a 46px shove off the line |
-| R | 400ms | 40000ms† | down a line and back, 42 either side; **press R again to recall it** | 1 on the way out, 1 on the way back |
+| R | 400ms | 40000ms† | to the arena's edge and back, 42 either side; **press R again to recall it** | 1 on the way out, 1 on the way back |
 | F | instant | 20000ms | 190 | 0 |
 
 \* His level-1 auto cycle is 680ms, and he gains +6% attack speed per level. The windup
@@ -60,9 +60,9 @@ squashed by the blow and kicking up dust. An unstoppable enemy, such as a braced
 still loses the pip and gets the slow, but doesn't move.
 
 **R.** Two great axes fly down a line and come back to him, wherever he has gone. They
-turn back about 280px past the first enemy they hit, or at once when you press R again,
-or at the arena's edge if neither happens. They pass through everything and can hit each
-enemy once on the way out and once on the way back. The second press isn't a new cast,
+fly all the way to the arena's edge before they turn back, or turn at once when you press
+R again. They pass through everything and can hit each enemy once on the way out and once
+on the way back. The second press isn't a new cast,
 so the cooldown runs from the first.
 
 **His look.** He's a rugged, off-white slime with heavy brows, a scar, a full unkempt
