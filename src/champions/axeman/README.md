@@ -46,7 +46,7 @@ It also scores 10 × the stage multiplier (`Q.catchScoreBonus`), shown as a gold
 him, and heals him. The heal grows with a streak. The first catch heals 5 HP, and each
 catch in a row heals 5 more (10, 15), up to 20. It never heals past full, and a catch
 that fills him up shows `MAX`. Missing a single axe ends the streak, and the next catch
-heals 5 again. A missed axe lies on the ground for 350ms, and he can still pick it up by
+heals 5 again. A missed axe lies on the ground for 120ms, and he can still pick it up by
 stepping on it. After that it's gone, and he waits for Q.
 
 **W.** It gives +25% move speed that fades to nothing over 0.75s, and +30% attack speed

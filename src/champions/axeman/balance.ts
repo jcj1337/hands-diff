@@ -61,8 +61,12 @@ export const Q = {
    * catch came a beat after the axe looked caught.
    */
   catchEarlyMs: 120,
-  /** A missed axe lies there this long and can still be picked up, then it is gone. */
-  groundMs: 350,
+  /**
+   * A missed axe lies there this long and can still be picked up, then it is
+   * gone. A short grace, about as long as `catchEarlyMs`: the catch is meant to
+   * be made as it comes down, not by walking over it afterwards.
+   */
+  groundMs: 120,
   /**
    * HP he gets back for an axe he catches (never past full): `base` for the
    * first, `perCatch` more for each catch in a row, up to `max`. Missing one

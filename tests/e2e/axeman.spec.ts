@@ -234,6 +234,11 @@ test('axeman: picked from the profile, Q axes on autos, where the axe lands, cat
     s.held === 0 && s.stats.axesMissed === start.stats.axesMissed + 1 && s.streak === 0
       ? pass('not under it when it lands: the axe is lost, and the heal streak with it')
       : fail(`miss: ${JSON.stringify({ held: s.held, stats: s.stats })}`);
+    // Only a short grace on the ground (Q.groundMs), then it is gone.
+    const lay = before ? s.now - before.landsAt : Number.NaN;
+    lay >= cfg.Q.groundMs && lay <= cfg.Q.groundMs + 60
+      ? pass(`it lies on the ground only ${cfg.Q.groundMs}ms to be picked up (gone ${Math.round(lay)}ms after it landed)`)
+      : fail(`miss timing: gone ${Math.round(lay)}ms after landing, expected about ${cfg.Q.groundMs}`);
   }
 
   // === 4. Holding ================================================================
